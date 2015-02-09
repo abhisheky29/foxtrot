@@ -82,8 +82,7 @@ public class ElasticsearchQueryStore implements QueryStore {
             }
             dataStore.save(table, document);
             long timestamp = document.getTimestamp();
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.start();
+            Stopwatch stopwatch = Stopwatch.createStarted();
             connection.getClient()
                     .prepareIndex()
                     .setIndex(ElasticsearchUtils.getCurrentIndex(table, timestamp))
@@ -94,7 +93,7 @@ public class ElasticsearchQueryStore implements QueryStore {
                     .setConsistencyLevel(WriteConsistencyLevel.QUORUM)
                     .execute()
                     .get(2, TimeUnit.SECONDS);
-            logger.info(String.format("ES took : %d table : %s", stopwatch.elapsedMillis(), table));
+            logger.info(String.format("ES took : %d table : %s", stopwatch.elapsed(TimeUnit.MILLISECONDS), table));
         } catch (QueryStoreException ex) {
             throw ex;
         } catch (DataStoreException ex) {
@@ -148,13 +147,12 @@ public class ElasticsearchQueryStore implements QueryStore {
                 bulkRequestBuilder.add(indexRequest);
             }
             if (bulkRequestBuilder.numberOfActions() > 0){
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.start();
+                Stopwatch stopwatch = Stopwatch.createStarted();
                 BulkResponse responses = bulkRequestBuilder
                         .setConsistencyLevel(WriteConsistencyLevel.QUORUM)
                         .execute()
                         .get(10, TimeUnit.SECONDS);
-                logger.info(String.format("ES took : %d table : %s", stopwatch.elapsedMillis(), table));
+                logger.info(String.format("ES took : %d table : %s", stopwatch.elapsed(TimeUnit.MILLISECONDS), table));
                 int failedCount = 0;
                 for (int i = 0; i < responses.getItems().length; i++) {
                     BulkItemResponse itemResponse = responses.getItems()[i];

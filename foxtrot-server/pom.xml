@@ -36,6 +36,16 @@
             <groupId>foxtrot</groupId>
             <artifactId>foxtrot-core</artifactId>
             <version>0.2</version>
+            <exclusions>
+            	<exclusion>
+            		<artifactId>jersey-core</artifactId>
+            		<groupId>com.sun.jersey</groupId>
+            	</exclusion>
+            	<exclusion>
+            		<artifactId>jersey-client</artifactId>
+            		<groupId>com.sun.jersey</groupId>
+            	</exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>foxtrot</groupId>
@@ -67,6 +77,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+        	<groupId>junit</groupId>
+        	<artifactId>junit</artifactId>
+        	<version>4.12</version>
+        	<scope>test</scope>
+        </dependency>
+        <dependency>
+        	<groupId>io.dropwizard</groupId>
+        	<artifactId>dropwizard-testing</artifactId>
+        	<version>${dropwizard.version}</version>
+        	<scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

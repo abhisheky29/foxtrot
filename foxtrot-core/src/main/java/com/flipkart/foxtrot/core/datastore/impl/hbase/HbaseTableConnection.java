@@ -15,19 +15,22 @@
  */
 package com.flipkart.foxtrot.core.datastore.impl.hbase;
 
-import com.flipkart.foxtrot.core.datastore.DataStoreException;
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
+
+import java.io.File;
+
 import net.sourceforge.cobertura.CoverageIgnore;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.util.PoolMap;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import com.flipkart.foxtrot.core.datastore.DataStoreException;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)
@@ -46,7 +49,7 @@ public class HbaseTableConnection implements Managed {
     }
 
 
-    public synchronized HTableInterface getTable() throws DataStoreException {
+    public synchronized Table getTable() throws DataStoreException {
         try {
             if (hbaseConfig.isSecure() && UserGroupInformation.isSecurityEnabled()) {
                 UserGroupInformation.getCurrentUser().reloginFromKeytab();

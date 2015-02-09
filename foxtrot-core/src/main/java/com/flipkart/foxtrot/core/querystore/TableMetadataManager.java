@@ -15,10 +15,11 @@
  */
 package com.flipkart.foxtrot.core.querystore;
 
-import com.flipkart.foxtrot.common.Table;
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
 
 import java.util.List;
+
+import com.flipkart.foxtrot.common.Table;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)

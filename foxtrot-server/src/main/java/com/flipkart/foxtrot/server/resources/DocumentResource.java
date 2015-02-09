@@ -15,20 +15,28 @@
  */
 package com.flipkart.foxtrot.server.resources;
 
-import com.flipkart.foxtrot.common.Document;
-import com.flipkart.foxtrot.core.querystore.QueryStore;
-import com.flipkart.foxtrot.core.querystore.QueryStoreException;
-import com.sun.istack.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.validation.Valid;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.flipkart.foxtrot.common.Document;
+import com.flipkart.foxtrot.core.querystore.QueryStore;
+import com.flipkart.foxtrot.core.querystore.QueryStoreException;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)
@@ -96,7 +104,7 @@ public class DocumentResource {
 
     @GET
     @Path("/{id}")
-    public Response getDocument(@PathParam("table") final String table, @PathParam("id") @NotNull final String id) {
+    public Response getDocument(@PathParam("table") final String table, @PathParam("id") final String id) {
         try {
             return Response.ok(queryStore.get(table, id)).build();
         } catch (QueryStoreException ex) {

@@ -21,7 +21,7 @@ import com.flipkart.foxtrot.common.Document;
 import com.flipkart.foxtrot.core.MockHTable;
 import com.flipkart.foxtrot.core.datastore.DataStoreException;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
 
 public class HBaseDataStoreTest {
     private HBaseDataStore HBaseDataStore;
-    private HTableInterface tableInterface;
+    private Table tableInterface;
     private HbaseTableConnection hBaseTableConnection;
     private ObjectMapper mapper = new ObjectMapper();
 

@@ -1,11 +1,13 @@
 package com.flipkart.foxtrot.core.common;
 
-import com.flipkart.foxtrot.core.querystore.QueryStore;
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
+
+import java.util.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Timer;
+import com.flipkart.foxtrot.core.querystore.QueryStore;
 
 /**
  * Created by rishabh.goyal on 07/07/14.

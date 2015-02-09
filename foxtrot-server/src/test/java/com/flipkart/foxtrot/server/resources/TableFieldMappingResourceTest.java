@@ -15,10 +15,14 @@
  */
 package com.flipkart.foxtrot.server.resources;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.SubtypeResolver;
+import com.fasterxml.jackson.databind.jsontype.impl.StdSubtypeResolver;
 import com.flipkart.foxtrot.common.FieldType;
 import com.flipkart.foxtrot.common.FieldTypeMapping;
 import com.flipkart.foxtrot.common.TableFieldMapping;
+import com.flipkart.foxtrot.common.group.GroupRequest;
 import com.flipkart.foxtrot.core.MockElasticsearchServer;
 import com.flipkart.foxtrot.core.TestUtils;
 import com.flipkart.foxtrot.core.common.CacheUtils;
@@ -30,14 +34,16 @@ import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsLoader;
 import com.flipkart.foxtrot.core.querystore.impl.*;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.yammer.dropwizard.testing.ResourceTest;
+
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import io.dropwizard.testing.junit.ResourceTestRule;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -46,6 +52,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.ProcessingException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -53,14 +62,23 @@ import static org.mockito.Mockito.when;
 /**
  * Created by rishabh.goyal on 06/05/14.
  */
-public class TableFieldMappingResourceTest extends ResourceTest {
+public class TableFieldMappingResourceTest {
 
-    private ObjectMapper mapper = new ObjectMapper();
     private HazelcastInstance hazelcastInstance;
     private MockElasticsearchServer elasticsearchServer;
     private QueryStore queryStore;
+    
+    private ObjectMapper mapper;
+    public ResourceTestRule resources;
+    
+    @Rule
+    public ResourceTestRule getResourcesTestRule() throws Exception {
+    	resources = ResourceTestRule.builder().addResource(new TableFieldMappingResource(queryStore)).setMapper(mapper).build();
+    	return resources;
+    }
 
     public TableFieldMappingResourceTest() throws Exception {
+    	mapper = new ObjectMapper();
         ElasticsearchUtils.setMapper(mapper);
         DataStore dataStore = TestUtils.getDataStore();
 
@@ -92,11 +110,6 @@ public class TableFieldMappingResourceTest extends ResourceTest {
         queryStore = new ElasticsearchQueryStore(tableMetadataManager, elasticsearchConnection, dataStore);
     }
 
-    @Override
-    protected void setUpResources() throws Exception {
-        addResource(new TableFieldMappingResource(queryStore));
-    }
-
     @After
     public void tearDown() throws IOException {
         elasticsearchServer.shutdown();
@@ -115,25 +128,25 @@ public class TableFieldMappingResourceTest extends ResourceTest {
         mappings.add(new FieldTypeMapping("head.hello", FieldType.LONG));
 
         TableFieldMapping tableFieldMapping = new TableFieldMapping(TestUtils.TEST_TABLE, mappings);
-        String response = client().resource(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE))
-                .get(String.class);
+        String response = resources.client().target(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE))
+                .request().get(String.class);
 
         TableFieldMapping mapping = mapper.readValue(response, TableFieldMapping.class);
         assertEquals(tableFieldMapping.getTable(), mapping.getTable());
         assertTrue(tableFieldMapping.getMappings().equals(mapping.getMappings()));
     }
 
-    @Test(expected = UniformInterfaceException.class)
+    @Test(expected = InternalServerErrorException.class)
     public void testGetInvalidTable() throws Exception {
-        client().resource(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE + "-missing"))
-                .get(String.class);
+        resources.client().target(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE + "-missing"))
+                .request().get(String.class);
     }
 
     @Test
     public void testGetTableWithNoDocument() throws Exception {
         TableFieldMapping request = new TableFieldMapping(TestUtils.TEST_TABLE, new HashSet<FieldTypeMapping>());
-        TableFieldMapping response = client().resource(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE))
-                .get(TableFieldMapping.class);
+        TableFieldMapping response = resources.client().target(String.format("/v1/tables/%s/fields", TestUtils.TEST_TABLE))
+                .request().get(TableFieldMapping.class);
 
         assertEquals(request.getTable(), response.getTable());
         assertTrue(request.getMappings().equals(response.getMappings()));

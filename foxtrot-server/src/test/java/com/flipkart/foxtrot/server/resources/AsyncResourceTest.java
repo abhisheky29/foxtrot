@@ -15,6 +15,33 @@
  */
 package com.flipkart.foxtrot.server.resources;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+import io.dropwizard.testing.junit.ResourceTestRule;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.SubtypeResolver;
@@ -30,47 +57,41 @@ import com.flipkart.foxtrot.core.datastore.DataStore;
 import com.flipkart.foxtrot.core.querystore.QueryExecutor;
 import com.flipkart.foxtrot.core.querystore.TableMetadataManager;
 import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsLoader;
-import com.flipkart.foxtrot.core.querystore.impl.*;
+import com.flipkart.foxtrot.core.querystore.impl.DistributedCacheFactory;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchConnection;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchQueryStore;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchUtils;
+import com.flipkart.foxtrot.core.querystore.impl.HazelcastConnection;
+import com.flipkart.foxtrot.core.querystore.impl.TableMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.sun.jersey.api.client.WebResource;
-import com.yammer.dropwizard.testing.ResourceTest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.junit.After;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by rishabh.goyal on 05/05/14.
  */
-public class AsyncResourceTest extends ResourceTest {
+public class AsyncResourceTest {
 
     private TableMetadataManager tableMetadataManager;
     private MockElasticsearchServer elasticsearchServer;
     private HazelcastInstance hazelcastInstance;
     private QueryExecutor queryExecutor;
+    private ObjectMapper mapper;
+    public ResourceTestRule resources;
+    
+    @Rule
+    public ResourceTestRule getResourcesTestRule() throws Exception {
+    	resources = ResourceTestRule.builder().addResource(new AsyncResource()).setMapper(mapper).build();
+    	return resources;
+    }
 
     public AsyncResourceTest() throws Exception {
-        getObjectMapperFactory().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        getObjectMapperFactory().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    	mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         SubtypeResolver subtypeResolver = new StdSubtypeResolver();
-        getObjectMapperFactory().setSubtypeResolver(subtypeResolver);
+        mapper.setSubtypeResolver(subtypeResolver);
+        mapper.registerSubtypes(GroupRequest.class);
 
-        ObjectMapper mapper = getObjectMapperFactory().build();
         ElasticsearchUtils.setMapper(mapper);
         DataStore dataStore = TestUtils.getDataStore();
 
@@ -109,12 +130,6 @@ public class AsyncResourceTest extends ResourceTest {
         }
     }
 
-
-    @Override
-    protected void setUpResources() throws Exception {
-        addResource(new AsyncResource());
-    }
-
     @After
     public void tearDown() throws Exception {
         elasticsearchServer.shutdown();
@@ -149,9 +164,7 @@ public class AsyncResourceTest extends ResourceTest {
         AsyncDataToken dataToken = queryExecutor.executeAsync(groupRequest);
         Thread.sleep(1000);
 
-        WebResource webResource = client().resource("/v1/async/" + dataToken.getAction() + "/" + dataToken.getKey());
-        GroupResponse groupResponse = webResource.type(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class);
-
+        GroupResponse groupResponse = resources.client().target("/v1/async/" + dataToken.getAction() + "/" + dataToken.getKey()).request().accept(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class);
         assertEquals(expectedResponse, groupResponse.getResult());
     }
 
@@ -164,11 +177,7 @@ public class AsyncResourceTest extends ResourceTest {
         AsyncDataToken dataToken = queryExecutor.executeAsync(groupRequest);
         Thread.sleep(1000);
 
-        try {
-            client().resource(String.format("/v1/async/distinct/%s", dataToken.getKey())).type(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class);
-        } catch (UniformInterfaceException ex) {
-            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), ex.getResponse().getStatus());
-        }
+        assertNull(resources.client().target(String.format("/v1/async/distinct/%s", dataToken.getKey())).request().accept(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class));
     }
 
     @Test
@@ -180,11 +189,7 @@ public class AsyncResourceTest extends ResourceTest {
         AsyncDataToken dataToken = queryExecutor.executeAsync(groupRequest);
         Thread.sleep(1000);
 
-        try {
-            client().resource(String.format("/v1/async/%s/dummy", dataToken.getAction())).type(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class);
-        } catch (UniformInterfaceException ex) {
-            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), ex.getResponse().getStatus());
-        }
+        assertNull(resources.client().target(String.format("/v1/async/%s/dummy", dataToken.getAction())).request().accept(MediaType.APPLICATION_JSON_TYPE).get(GroupResponse.class));
     }
 
     @Test
@@ -214,9 +219,8 @@ public class AsyncResourceTest extends ResourceTest {
         AsyncDataToken dataToken = queryExecutor.executeAsync(groupRequest);
         Thread.sleep(1000);
 
-        GroupResponse response = client().resource("/v1/async")
-                .type(MediaType.APPLICATION_JSON_TYPE)
-                .post(GroupResponse.class, dataToken);
+        GroupResponse response = resources.client().target("/v1/async").request()
+                .post(Entity.entity(dataToken, MediaType.APPLICATION_JSON_TYPE), GroupResponse.class);
 
         assertEquals(expectedResponse, response.getResult());
     }
@@ -225,20 +229,14 @@ public class AsyncResourceTest extends ResourceTest {
     @Test
     public void testGetResponsePostInvalidKey() throws Exception {
         AsyncDataToken dataToken = new AsyncDataToken("group", null);
-        GroupResponse response = client().resource("/v1/async").type(MediaType.APPLICATION_JSON_TYPE).post(GroupResponse.class, dataToken);
+        GroupResponse response = resources.client().target("/v1/async").request().post(Entity.entity(dataToken, MediaType.APPLICATION_JSON_TYPE), GroupResponse.class);
         assertNull(response);
     }
 
-    @Test
+    @Test(expected=InternalServerErrorException.class)
     public void testGetResponsePostInvalidAction() throws Exception {
         AsyncDataToken dataToken = new AsyncDataToken(null, UUID.randomUUID().toString());
-
-        try {
-            client().resource("/v1/async")
-                    .type(MediaType.APPLICATION_JSON_TYPE)
-                    .post(GroupResponse.class, dataToken);
-        } catch (UniformInterfaceException ex) {
-            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), ex.getResponse().getStatus());
-        }
+        resources.client().target("/v1/async").request()
+                .post(Entity.entity(dataToken, MediaType.APPLICATION_JSON_TYPE), GroupResponse.class);
     }
 }

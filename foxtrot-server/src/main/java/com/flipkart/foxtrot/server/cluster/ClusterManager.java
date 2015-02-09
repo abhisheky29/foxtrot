@@ -1,18 +1,22 @@
 package com.flipkart.foxtrot.server.cluster;
 
-import com.flipkart.foxtrot.core.querystore.impl.HazelcastConnection;
-import com.google.common.collect.ImmutableList;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.IMap;
-import com.yammer.dropwizard.lifecycle.Managed;
-import com.yammer.metrics.core.HealthCheck;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.dropwizard.lifecycle.Managed;
 
 import java.net.Inet4Address;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.health.HealthCheck;
+import com.flipkart.foxtrot.core.querystore.impl.HazelcastConnection;
+import com.google.common.collect.ImmutableList;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.IMap;
 
 public class ClusterManager implements Managed {
     private static final Logger logger = LoggerFactory.getLogger(ClusterManager.class.getSimpleName());

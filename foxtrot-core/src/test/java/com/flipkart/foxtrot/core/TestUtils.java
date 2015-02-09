@@ -26,7 +26,7 @@ import com.flipkart.foxtrot.core.datastore.impl.hbase.HbaseTableConnection;
 import com.flipkart.foxtrot.core.querystore.actions.spi.ActionMetadata;
 import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsLoader;
 import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsProvider;
-import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Table;
 import org.mockito.Mockito;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -46,7 +46,7 @@ public class TestUtils {
     public static String TEST_TABLE = "test-table";
 
     public static DataStore getDataStore() throws DataStoreException {
-        HTableInterface tableInterface = MockHTable.create();
+        Table tableInterface = MockHTable.create();
         HbaseTableConnection tableConnection = Mockito.mock(HbaseTableConnection.class);
         when(tableConnection.getTable()).thenReturn(tableInterface);
         return new HBaseDataStore(tableConnection, new ObjectMapper());

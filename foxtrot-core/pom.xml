@@ -17,7 +17,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <version>2.0.0-mr1-cdh4.2.0</version>
+            <version>2.6.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -26,21 +26,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>0.94.2-cdh4.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
@@ -63,7 +48,7 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>0.9.1</version>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- Hazelcast -->
@@ -83,11 +68,6 @@
 
 
         <!--Internal-->
-        <dependency>
-            <groupId>foxtrot</groupId>
-            <artifactId>foxtrot-common</artifactId>
-            <version>0.3</version>
-        </dependency>
 
         <!-- Reflections for scanning classpath to get analytics providers-->
         <dependency>
@@ -100,6 +80,43 @@
                     <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+        	<groupId>io.dropwizard</groupId>
+        	<artifactId>dropwizard-core</artifactId>
+        	<version>${dropwizard.version}</version>
+        </dependency>
+        <dependency>
+        	<groupId>junit</groupId>
+        	<artifactId>junit</artifactId>
+        	<version>4.12</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.apache.hbase</groupId>
+        	<artifactId>hbase-client</artifactId>
+        	<version>0.99.2</version>
+        	<exclusions>
+        		<exclusion>
+        			<artifactId>slf4j-log4j12</artifactId>
+        			<groupId>org.slf4j</groupId>
+        		</exclusion>
+        	</exclusions>
+        </dependency>
+        <dependency>
+        	<groupId>org.apache.hbase</groupId>
+        	<artifactId>hbase-thrift</artifactId>
+        	<version>0.99.2</version>
+        	<scope>test</scope>
+        </dependency>
+        <dependency>
+        	<groupId>io.dropwizard</groupId>
+        	<artifactId>dropwizard-assets</artifactId>
+        	<version>${dropwizard.version}</version>
+        </dependency>
+        <dependency>
+        	<groupId>foxtrot</groupId>
+        	<artifactId>foxtrot-common</artifactId>
+        	<version>0.3</version>
         </dependency>
     </dependencies>
     <build>

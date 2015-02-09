@@ -15,23 +15,26 @@
  */
 package com.flipkart.foxtrot.server.util;
 
+import io.dropwizard.lifecycle.Managed;
+import io.dropwizard.setup.Environment;
+
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
+
+import net.sourceforge.cobertura.CoverageIgnore;
+
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.jsontype.SubtypeResolver;
 import com.flipkart.foxtrot.core.common.Action;
 import com.flipkart.foxtrot.core.querystore.actions.spi.ActionMetadata;
 import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsLoader;
 import com.flipkart.foxtrot.core.querystore.actions.spi.AnalyticsProvider;
-import com.yammer.dropwizard.config.Environment;
-import com.yammer.dropwizard.lifecycle.Managed;
-import net.sourceforge.cobertura.CoverageIgnore;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)
@@ -79,7 +82,7 @@ public class ManagedActionScanner implements Managed {
             logger.info("Registered action: " + action.getCanonicalName());
         }
         SubtypeResolver subtypeResolver
-                = environment.getObjectMapperFactory().getSubtypeResolver();
+                = environment.getObjectMapper().getSubtypeResolver();
         subtypeResolver.registerSubtypes(types.toArray(new NamedType[types.size()]));
     }
 

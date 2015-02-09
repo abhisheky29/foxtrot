@@ -15,7 +15,10 @@
  */
 package com.flipkart.foxtrot.common;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.flipkart.foxtrot.common.group.GroupResponse;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)
@@ -23,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * Time: 9:17 PM
  */
 @JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "opcode")
+@JsonSubTypes({ @Type(name="group", value=GroupResponse.class) })
 public interface ActionResponse {
 
     public void accept(ResponseVisitor visitor);

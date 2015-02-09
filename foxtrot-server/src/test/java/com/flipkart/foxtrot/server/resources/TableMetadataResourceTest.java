@@ -15,46 +15,67 @@
  */
 package com.flipkart.foxtrot.server.resources;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import io.dropwizard.testing.junit.ResourceTestRule;
+
+import java.util.UUID;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.foxtrot.common.Table;
 import com.flipkart.foxtrot.core.MockElasticsearchServer;
 import com.flipkart.foxtrot.core.TestUtils;
 import com.flipkart.foxtrot.core.common.CacheUtils;
 import com.flipkart.foxtrot.core.querystore.TableMetadataManager;
-import com.flipkart.foxtrot.core.querystore.impl.*;
+import com.flipkart.foxtrot.core.querystore.impl.DistributedCacheFactory;
+import com.flipkart.foxtrot.core.querystore.impl.DistributedTableMetadataManager;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchConnection;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchUtils;
+import com.flipkart.foxtrot.core.querystore.impl.HazelcastConnection;
+import com.flipkart.foxtrot.core.querystore.impl.TableMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.sun.jersey.api.client.UniformInterfaceException;
-import com.yammer.dropwizard.testing.ResourceTest;
-import com.yammer.dropwizard.validation.InvalidEntityException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.junit.After;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by rishabh.goyal on 04/05/14.
  */
-public class TableMetadataResourceTest extends ResourceTest {
+public class TableMetadataResourceTest {
 
     private TableMetadataManager tableMetadataManager;
     private MockElasticsearchServer elasticsearchServer;
     private HazelcastInstance hazelcastInstance;
+    
+    public ResourceTestRule resources;
+    private ObjectMapper mapper;
+    
+    @Rule
+    public ResourceTestRule getResourcesTestRule() throws Exception {
+    	resources = ResourceTestRule.builder().addResource(new TableMetadataResource(tableMetadataManager)).setMapper(mapper).build();
+    	return resources;
+    }
 
     public TableMetadataResourceTest() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+        mapper = new ObjectMapper();
         ElasticsearchUtils.setMapper(mapper);
 
         //Initializing Cache Factory
@@ -79,12 +100,6 @@ public class TableMetadataResourceTest extends ResourceTest {
         tableMetadataManager.start();
     }
 
-    @Override
-    protected void setUpResources() throws Exception {
-        addResource(new TableMetadataResource(tableMetadataManager));
-    }
-
-
     @After
     public void tearDown() throws Exception {
         elasticsearchServer.shutdown();
@@ -96,7 +111,7 @@ public class TableMetadataResourceTest extends ResourceTest {
     @Test
     public void testSave() throws Exception {
         Table table = new Table(TestUtils.TEST_TABLE, 30);
-        client().resource("/v1/tables").type(MediaType.APPLICATION_JSON_TYPE).post(table);
+        resources.client().target("/v1/tables").request().post(Entity.entity(table, MediaType.APPLICATION_JSON_TYPE));
 
         Table response = tableMetadataManager.get(table.getName());
         assertNotNull(response);
@@ -104,33 +119,30 @@ public class TableMetadataResourceTest extends ResourceTest {
         assertEquals(table.getTtl(), response.getTtl());
     }
 
-    @Test(expected = InvalidEntityException.class)
+    @Test(expected = ProcessingException.class)
     public void testSaveNullTable() throws Exception {
         Table table = null;
-        client().resource("/v1/tables").type(MediaType.APPLICATION_JSON_TYPE).post(table);
+        resources.client().target("/v1/tables").request().post(Entity.entity(table, MediaType.APPLICATION_JSON_TYPE));
     }
 
-    @Test(expected = InvalidEntityException.class)
+    @Test(expected = ProcessingException.class)
     public void testSaveNullTableName() throws Exception {
         Table table = new Table(null, 30);
-        client().resource("/v1/tables").type(MediaType.APPLICATION_JSON_TYPE).post(table);
+        resources.client().target("/v1/tables").request().post(Entity.entity(table, MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Test
     public void testSaveBackendError() throws Exception {
         Table table = new Table(UUID.randomUUID().toString(), 30);
         doThrow(new Exception()).when(tableMetadataManager).save(Matchers.<Table>any());
-        try {
-            client().resource("/v1/tables").type(MediaType.APPLICATION_JSON_TYPE).post(table);
-        } catch (UniformInterfaceException ex) {
-            assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), ex.getResponse().getStatus());
-        }
+        Response response = resources.client().target("/v1/tables").request().post(Entity.entity(table, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals(response.getStatus(), 500);
     }
 
-    @Test(expected = InvalidEntityException.class)
+    @Test(expected = ProcessingException.class)
     public void testSaveIllegalTtl() throws Exception {
         Table table = new Table(TestUtils.TEST_TABLE, 0);
-        client().resource("/v1/tables").type(MediaType.APPLICATION_JSON_TYPE).post(table);
+        resources.client().target("/v1/tables").request().post(Entity.entity(table, MediaType.APPLICATION_JSON_TYPE));
     }
 
 
@@ -139,18 +151,14 @@ public class TableMetadataResourceTest extends ResourceTest {
         Table table = new Table(TestUtils.TEST_TABLE, 30);
         tableMetadataManager.save(table);
 
-        Table response = client().resource(String.format("/v1/tables/%s", table.getName())).get(Table.class);
+        Table response = resources.client().target(String.format("/v1/tables/%s", table.getName())).request().get(Table.class);
         assertNotNull(response);
         assertEquals(table.getName(), response.getName());
         assertEquals(table.getTtl(), response.getTtl());
     }
 
-    @Test
+    @Test(expected=NotFoundException.class)
     public void testGetMissingTable() throws Exception {
-        try {
-            client().resource(String.format("/v1/tables/%s", TestUtils.TEST_TABLE)).get(Table.class);
-        } catch (UniformInterfaceException ex) {
-            assertEquals(Response.Status.NOT_FOUND.getStatusCode(), ex.getResponse().getStatus());
-        }
+    	resources.client().target(String.format("/v1/tables/%s", TestUtils.TEST_TABLE)).request().get(Table.class);
     }
 }

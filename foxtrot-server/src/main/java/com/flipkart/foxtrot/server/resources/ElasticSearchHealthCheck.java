@@ -15,19 +15,19 @@
  */
 package com.flipkart.foxtrot.server.resources;
 
-import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchConnection;
-import com.yammer.metrics.core.HealthCheck;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+
+import com.codahale.metrics.health.HealthCheck;
+import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchConnection;
 
 /**
  * Created by rishabh.goyal on 15/05/14.
  */
 
-public class ElasticSearchHealthCheck extends HealthCheck{
+public class ElasticSearchHealthCheck extends HealthCheck {
     private ElasticsearchConnection elasticsearchConnection;
 
-    public ElasticSearchHealthCheck(String name, ElasticsearchConnection elasticsearchConnection) {
-        super(name);
+    public ElasticSearchHealthCheck(ElasticsearchConnection elasticsearchConnection) {
         this.elasticsearchConnection = elasticsearchConnection;
     }
 

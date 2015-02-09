@@ -15,15 +15,17 @@
  */
 package com.flipkart.foxtrot.server.config;
 
+import io.dropwizard.Configuration;
+
+import javax.validation.Valid;
+
+import net.sourceforge.cobertura.CoverageIgnore;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.foxtrot.core.common.DataDeletionManagerConfig;
 import com.flipkart.foxtrot.core.datastore.impl.hbase.HbaseConfig;
 import com.flipkart.foxtrot.core.querystore.impl.ClusterConfig;
 import com.flipkart.foxtrot.core.querystore.impl.ElasticsearchConfig;
-import com.yammer.dropwizard.config.Configuration;
-import net.sourceforge.cobertura.CoverageIgnore;
-
-import javax.validation.Valid;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)

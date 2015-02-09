@@ -15,8 +15,9 @@
  */
 package com.flipkart.foxtrot.core.querystore.impl;
 
-import com.yammer.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.Managed;
 import net.sourceforge.cobertura.CoverageIgnore;
+
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;

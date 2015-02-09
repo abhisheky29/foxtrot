@@ -21,8 +21,9 @@ import com.flipkart.foxtrot.common.Document;
 import com.flipkart.foxtrot.core.datastore.DataStore;
 import com.flipkart.foxtrot.core.datastore.DataStoreException;
 import com.google.common.base.Stopwatch;
+
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: Santanu Sinha (santanu.sinha@flipkart.com)
@@ -59,13 +61,12 @@ public class HBaseDataStore implements DataStore {
         if (document == null || document.getData() == null || document.getId() == null) {
             throw new DataStoreException(DataStoreException.ErrorCode.STORE_INVALID_REQUEST, "Invalid Document");
         }
-        HTableInterface hTable = null;
+        Table hTable = null;
         try {
             hTable = tableWrapper.getTable();
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.start();
+            Stopwatch stopwatch = Stopwatch.createStarted();
             hTable.put(getPutForDocument(table, document));
-            logger.error(String.format("HBASE put took : %d table : %s", stopwatch.elapsedMillis(), table));
+            logger.error(String.format("HBASE put took : %d table : %s", stopwatch.elapsed(TimeUnit.MILLISECONDS), table));
         } catch (JsonProcessingException e) {
             throw new DataStoreException(DataStoreException.ErrorCode.STORE_INVALID_REQUEST,
                     e.getMessage(), e);
@@ -105,13 +106,12 @@ public class HBaseDataStore implements DataStore {
                     e.getMessage(), e);
         }
 
-        HTableInterface hTable = null;
+        Table hTable = null;
         try {
             hTable = tableWrapper.getTable();
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.start();
+            Stopwatch stopwatch = Stopwatch.createStarted();
             hTable.put(puts);
-            logger.error(String.format("HBASE put took : %d table : %s", stopwatch.elapsedMillis(), table));
+            logger.error(String.format("HBASE put took : %d table : %s", stopwatch.elapsed(TimeUnit.MILLISECONDS), table));
         } catch (IOException e) {
             throw new DataStoreException(DataStoreException.ErrorCode.STORE_MULTI_SAVE,
                     e.getMessage(), e);
@@ -131,7 +131,7 @@ public class HBaseDataStore implements DataStore {
 
     @Override
     public Document get(final String table, String id) throws DataStoreException {
-        HTableInterface hTable = null;
+        Table hTable = null;
         try {
             Get get = new Get(Bytes.toBytes(id + ":" + table))
                     .addColumn(COLUMN_FAMILY, DATA_FIELD_NAME)
@@ -172,7 +172,7 @@ public class HBaseDataStore implements DataStore {
             throw new DataStoreException(DataStoreException.ErrorCode.STORE_INVALID_REQUEST, "Invalid Request IDs");
         }
 
-        HTableInterface hTable = null;
+        Table hTable = null;
         try {
             List<Get> gets = new ArrayList<Get>(ids.size());
             for (String id : ids) {

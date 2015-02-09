@@ -1,12 +1,13 @@
 package com.flipkart.foxtrot.common.query.datetime;
 
+import io.dropwizard.util.Duration;
+
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flipkart.foxtrot.common.query.Filter;
 import com.flipkart.foxtrot.common.query.FilterOperator;
 import com.flipkart.foxtrot.common.query.FilterVisitor;
-import com.yammer.dropwizard.util.Duration;
-
-import javax.validation.constraints.NotNull;
 
 public class LastFilter extends Filter {
     private long currentTime;
